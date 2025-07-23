@@ -1,0 +1,272 @@
+@startuml
+
+title Chess Game - Full Class Diagram
+
+package "pieces" 
+{
+  abstract class Piece 
+  {
+    {static} + image_cache: dict
+    + color: int {get}
+    + image_dir: Path {get; set;}
+    + position: tuple[int, int] {get; set;}
+    + image: Surface | None {get}
+    + __init__(color: int, path: Path, x: int, y: int)
+    + __getstate__() : dict
+    + __setstate__(state: dict)
+    + __eq__(other: Piece) : bool
+    {abstract} + valid_moves(piece_board: dict, defend_moves: bool) : list
+    + draw(screen: Surface, square_size: int)
+    + move(x: int, y: int)
+    + copy() : Piece
+    - _load_image()
+  }
+
+  abstract class SpecialPiece 
+  {
+    + first_move: bool {get}
+    + special_moves: list {get}
+    + __init__(color: int, path: Path, x: int, y: int)
+    + __getstate__() : dict
+    + __setstate__(state: dict)
+    + move(x: int, y: int)
+    + copy() : SpecialPiece
+  }
+
+  class King 
+  {
+    + checked: bool {get}
+    + castling_rook: dict {get}
+    + __init__(color: int, path: Path, x: int, y: int)
+    + __getstate__() : dict
+    + __setstate__(state: dict)
+    + valid_moves(piece_board: dict, defend_moves: bool) : list
+    + copy() : King
+    + check()
+    - _castling(moves: list, piece_board: dict)
+    - _long_castle(moves: list, piece_board: dict)
+    - _short_castle(moves: list, piece_board: dict)
+    - _load_image()
+    - _update_image()
+  }
+
+  class Rook 
+  {
+      + valid_moves(piece_board: dict, defend_moves: bool) : list
+  }
+
+  class Pawn 
+  {
+      + valid_moves(piece_board: dict, defend_moves: bool) : list
+      + en_passant(moves: list, last_moved_pos: tuple)
+  }
+
+  class Queen 
+  {
+      + valid_moves(piece_board: dict, defend_moves: bool) : list
+  }
+  class Knight 
+  {
+      + valid_moves(piece_board: dict, defend_moves: bool) : list
+  }
+  class Bishop 
+  {
+      + valid_moves(piece_board: dict, defend_moves: bool) : list
+  }
+}
+
+package "views" 
+{
+  abstract class ScreenBase 
+  {
+    {static} + MARGIN: int
+    {static} + BUTTON_HEIGHT: int
+    {static} + BUTTON_WIDTH: int
+    {static} + SQUARE_SIZE: int
+    {static} + BOARD_SIZE: int
+    {static} + HEIGHT: int
+    {static} + WIDTH: int
+    {static} + IMG_DIR: Path
+    {static} + FONT_PATH: Path
+    {static} + BLACK: tuple
+    {static} + RED: tuple
+    {static} + BUTTON_RED: tuple
+    {static} + BUTTON_GREEN: tuple
+    {static} + BUTTON_PRESSED: tuple
+    {static} + GRAY: tuple
+    {static} + WHITE: tuple
+    {static} + BACKGROUND_GRAY: tuple
+    {static} + PANEL_BACKGROUND: tuple
+    - _screen: Surface
+    - _font: Font
+    - _is_button_pressed: list[bool]
+    - _button_x: int
+    - _button_y: int
+    - _button_dy: int
+    {static} + create_screen() : Surface
+    + __init__(screen: Surface)
+    + __getitem__(key: int) : bool
+    + __setitem__(key: int, value: bool)
+    {abstract} + screen_initialization(height_margin: int) : tuple
+    {abstract} + draw_buttons(height_margin: int)
+    + fill_background()
+    + reset_button_states()
+    + draw_board(board_img: Surface, chess_board: dict, valid_moves: list)
+    - _button_initialization(height_margin: int, reduction: float) : Rect
+    - _draw_button(text: str, height_margin: int, is_pressed: bool, reduction: float)
+  }
+
+  class MainMenuScreen 
+  {
+    + __init__(screen: Surface)
+    + screen_initialization(height_margin: int) : tuple
+    + draw_buttons(height_margin: int)
+    + draw_menu()
+    + draw_reload_game_panel() : Rect
+    - _prepare_title() : tuple
+    - _prepare_menu_images() : list
+  }
+
+  class GameScreen 
+  {
+    - _btn_size: int
+    - _label_x: int
+    - _label_y: int
+    {static} + draw_promotion_panel(images: list) : tuple
+    + __init__(screen: Surface)
+    + screen_initialization(height_margin: int, game_over: bool, winner: str | None) : tuple
+    + draw_buttons(height_margin: int)
+    + draw_image_buttons(move_buttons: list)
+    + draw_rotate_button(height_margin: int) : Rect
+    + draw_info(info: str)
+    + draw_winner_info(winner: str | None)
+    - _image_buttons_initialization(height_margin: int) : list
+  }
+
+  class CustomizeScreen 
+  {
+    - _theme_button_x: int
+    + __init__(screen: Surface)
+    + screen_initialization(height_margin: int) : tuple
+    + draw_buttons(height_margin: int)
+    - _themes_initialization() : list
+    - _draw_image_button(theme: str, x: int, y: int) : tuple
+  }
+}
+
+package "game_control" 
+{
+  class GameController 
+  {
+    + check: bool {get}
+    + current_player: int {get}
+    - _white_king: tuple
+    - _black_king: tuple
+    - _last_piece: Piece
+    - _last_moved_piece: Piece | None
+    + __init__()
+    + switch_player()
+    + reset()
+    + copy() : tuple
+    + restore_state(state_tuple: tuple)
+    + handle_click(x: int, y: int, piece_board: dict, valid_moves: list) : tuple | None
+    + handle_move(x: int, y: int, piece_board: dict) : str | None
+    + is_check(piece_board: dict) : bool
+    + any_valid_moves(piece_board: dict) : bool
+    + check_current_king(piece_board: dict, check: bool)
+    - _create_virtual_board(piece_board: dict, move: tuple, piece: Piece) : dict
+    - _is_king_in_check(piece_board: dict) : bool
+    - _castle_over_check(piece_board: dict, valid_moves: list, moves: list)
+    - _set_king_position(x: int, y: int)
+    - _handle_special_move(x: int, y: int, piece_board: dict) : str | None
+    - _handle_promotion()
+  }
+
+  class ChessBoard 
+  {
+    + info: str {get}
+    + game_over: bool {get}
+    + winner: str | None {get}
+    + image_dir: Path {get; set;}
+    - _index: int
+    - _save_lock: LockType
+    - _main_player: int
+    - _game_controller: GameController
+    - _valid_moves: list[tuple]
+    - _pieces: dict[tuple, Piece]
+    - _game_history: list[tuple[dict, tuple]]
+    + __init__()
+    + __len__()
+    + draw_board(view: ScreenBase)
+    + handle_click(x: int, y: int) : str | None
+    + handle_surrender() : str | None
+    + change_view(change_player: bool)
+    + first_move() : str | None
+    + previous_move() : str | None
+    + next_move(last_move: bool) : str | None
+    + reset()
+    + save_board()
+    - _load_board()
+    - _load_move(index: int)
+    - _copy_board(pieces_to_copy: dict | None) : dict
+    - _add_move()
+    - _rotate_board()
+    - _is_stalemate() : bool
+  }
+
+  class ChessGame 
+  {
+    - _fps: int
+    - _running: bool
+    - _screen: Surface
+    - _audio_dir: Path
+    - _board: ChessBoard
+    - _start_game_sound: str
+    - _menu_return_sound: str
+    - _custom_menu_sound: str
+    - _change_theme_sound: str
+    + __init__(fps: int)
+    + main_menu()
+    - _game_loop()
+    - _customize_menu()
+    - _load_game_icon(): Surface
+    - _handle_game_reload(menu_view: MainMenuScreen)
+    - _handle_board_click(cursor: tuple)
+    - _handle_move_action(action: str)
+    - _play_sound(sound_key: str | None)
+  }
+}
+
+Piece <|-- Queen
+Piece <|-- Knight
+Piece <|-- Bishop
+Piece <|-- SpecialPiece
+
+SpecialPiece <|-- King
+SpecialPiece <|-- Rook
+SpecialPiece <|-- Pawn
+
+ScreenBase <|-- GameScreen
+ScreenBase <|-- MainMenuScreen
+ScreenBase <|-- CustomizeScreen
+
+ChessBoard o-- "0..*" Piece
+ChessGame *-- "1" ChessBoard
+ChessBoard *-- "1" GameController
+
+ChessGame ..> ScreenBase : uses
+ChessGame ..> GameScreen : uses
+ChessGame ..> MainMenuScreen : uses
+ChessGame ..> CustomizeScreen : uses
+
+ChessBoard ..> ScreenBase : uses
+
+GameController ..> King : uses
+GameController ..> Pawn : uses
+GameController ..> Rook : uses
+GameController ..> Piece : uses
+GameController ..> views.GameScreen : uses
+
+King ..> Rook : uses
+
+@enduml

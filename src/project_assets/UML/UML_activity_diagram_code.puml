@@ -1,0 +1,55 @@
+@startuml
+
+title Chess Game - Activity Diagram
+
+start
+
+:Initialize ChessBoard;
+:Initialize GameController;
+:Initialize GameScreen;
+
+repeat
+  :Wait for click event (x, y);
+  
+  if (Is move selected?) then (yes)
+    :handle_move(x, y, piece_board);
+    :Check if check (is_check);
+    
+    if (is_check == True) then (yes)
+      :Check if checkmate;
+      
+      if (checkmate == True) then (yes)
+        :End game - checkmate;
+        stop
+        
+      else (no)
+        :Switch player (switch_player);
+        
+      endif
+      
+    else (no)
+      :Check if stalemate;
+      
+      if (stalemate == True) then (yes)
+        :End game - stalemate;
+        stop
+        
+      else (no)
+        :Switch player (switch_player);
+        
+      endif
+      
+    endif
+
+  else (no)
+    :Select piece & calculate valid moves (handle_click);
+    
+  endif
+
+  :Update screen (draw_board, draw_pieces, draw_valid_moves);
+
+repeat while (game not over)
+
+stop
+
+@enduml
